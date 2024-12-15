@@ -1,7 +1,5 @@
 'use client';
-import { ListItemIcon } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { Home, FitnessCenter, TableChart } from '@mui/icons-material';
 import {
   Button,
   TextField,
@@ -11,19 +9,10 @@ import {
   Box,
   IconButton,
   Collapse,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  List,
-  ListItem,
-  ListItemText,
-  Switch,
   Snackbar,
   Alert,
 } from '@mui/material';
-import { ExpandMore, ExpandLess, Delete, Menu, Close as CloseIcon } from '@mui/icons-material';
+import { ExpandMore, ExpandLess, Delete } from '@mui/icons-material';
 import Sidebar from '../components/Sidebar';
 
 interface Workout {
@@ -51,12 +40,9 @@ export default function PushPage() {
   const [date, setDate] = useState('');
   const [dropdownSelections, setDropdownSelections] = useState({});
   const [expandedGroups, setExpandedGroups] = useState({});
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [finishDialogOpen, setFinishDialogOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [weights, setWeights] = useState({}); // Keeps track of exercise weights
+  const [weights, setWeights] = useState({});
   const [modifiedWeights, setModifiedWeights] = useState<Set<string>>(new Set());
 
   useEffect(() => {

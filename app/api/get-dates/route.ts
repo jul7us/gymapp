@@ -29,8 +29,8 @@ export async function GET(request: Request) {
     try {
       // Get all muscle groups for this workout type
       const muscleGroups = Object.entries(muscleGroupCategories)
-        .filter(([_, category]) => category === workoutType)
-        .map(([group, _]) => group);
+        .filter(([group, category]) => category === workoutType)
+        .map(([group]) => group);
 
       // Get dates for exercises in these muscle groups
       const dates = await db.all(`
