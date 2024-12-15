@@ -9,25 +9,19 @@ import { Box } from '@mui/material';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#007bff', // Customize your primary color
+      main: '#007bff',
     },
     secondary: {
-      main: '#ff4081', // Customize your secondary color
+      main: '#ff4081',
     },
   },
 });
-
-export const metadata = {
-  title: 'Workout Tracker',
-  description: 'Track your workouts',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1'
-};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <meta name="viewport" content={metadata.viewport} />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </head>
       <body>
         <Box sx={{ 
