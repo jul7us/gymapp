@@ -19,3 +19,16 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@media (max-width: 600px) {
+  button, input, select {
+    min-height: 48px; /* Minimum touch target size */
+  }
+  
+  /* Add more space between interactive elements */
+  .MuiButton-root,
+  .MuiTextField-root,
+  .MuiSelect-root {
+    margin: 8px 0;
+  }
+}

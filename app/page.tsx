@@ -1,21 +1,42 @@
 import Link from 'next/link';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import { Box } from '@mui/system';
 
 export default function Home() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '50px' }}>
-      <h1>Welcome to Gym Tracker</h1>
-      <p>Select your workout for today:</p>
-      <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-        <Link href="/push">
-          <button style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer' }}>Push</button>
+    <Box
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        marginTop: '50px',
+        textAlign: 'center',
+      }}
+    >
+      <Typography variant="h3" gutterBottom>
+        Welcome to Gym Tracker
+      </Typography>
+      <Typography variant="body1" gutterBottom>
+        Select your workout for today:
+      </Typography>
+      <Box style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
+        <Link href="/push" passHref>
+          <Button variant="contained" color="primary">
+            Push
+          </Button>
         </Link>
-        <Link href="/pull">
-          <button style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer' }}>Pull</button>
+        <Link href="/pull" passHref>
+          <Button variant="contained" color="secondary">
+            Pull
+          </Button>
         </Link>
-        <Link href="/legs">
-          <button style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer' }}>Legs</button>
+        <Link href="/legs" passHref>
+          <Button variant="contained" color="success">
+            Legs
+          </Button>
         </Link>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }
