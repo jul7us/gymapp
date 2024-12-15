@@ -1,7 +1,5 @@
 'use client';
-import { ListItemIcon } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { Home, FitnessCenter, TableChart } from '@mui/icons-material';
 import {
   Button,
   TextField,
@@ -12,18 +10,14 @@ import {
   IconButton,
   Collapse,
   Dialog,
-  DialogActions,
+  DialogTitle,
   DialogContent,
   DialogContentText,
-  DialogTitle,
-  List,
-  ListItem,
-  ListItemText,
-  Switch,
+  DialogActions,
   Snackbar,
   Alert,
 } from '@mui/material';
-import { ExpandMore, ExpandLess, Delete, Menu, Close as CloseIcon } from '@mui/icons-material';
+import { ExpandMore, ExpandLess, Delete, Close as CloseIcon } from '@mui/icons-material';
 import Sidebar from '../components/Sidebar';
 
 interface Workout {
@@ -55,7 +49,6 @@ interface WorkoutEntry {
 
 export default function PullPage() {
   const [muscleGroups, setMuscleGroups] = useState({});
-
   const [workouts, setWorkouts] = useState<Workouts>({});
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -64,12 +57,9 @@ export default function PullPage() {
   const [date, setDate] = useState('');
   const [dropdownSelections, setDropdownSelections] = useState({});
   const [expandedGroups, setExpandedGroups] = useState({});
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [finishDialogOpen, setFinishDialogOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [weights, setWeights] = useState({}); // Keeps track of exercise weights
+  const [weights, setWeights] = useState({});
   const [modifiedWeights, setModifiedWeights] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -578,29 +568,12 @@ const handleFinishWorkout = async () => {
   </DialogTitle>
   <DialogContent>
     <DialogContentText>
-      You have unsaved changes. Do you want to save your workout before leaving this page?
+      Do you want to save your changes before leaving?
     </DialogContentText>
   </DialogContent>
   <DialogActions>
-    <Button onClick={confirmNavigation} color="primary">
-      Save and Close
-    </Button>
-    <Button 
-      onClick={() => {
-        setConfirmDialogOpen(false);
-        if (pendingNavigation) {
-          if (typeof pendingNavigation === 'string') {
-            window.location.href = pendingNavigation;
-          } else if (pendingNavigation.type === 'date') {
-            setSelectedDate(pendingNavigation.value);
-          }
-          setPendingNavigation(null);
-        }
-      }} 
-      color="error"
-    >
-      Skip and Close
-    </Button>
+    <Button onClick={confirmNavigation}>Save and Continue</Button>
+    <Button onClick={cancelNavigation} color="error">Cancel</Button>
   </DialogActions>
 </Dialog>
 

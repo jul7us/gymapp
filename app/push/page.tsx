@@ -9,10 +9,15 @@ import {
   Box,
   IconButton,
   Collapse,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
   Snackbar,
   Alert,
 } from '@mui/material';
-import { ExpandMore, ExpandLess, Delete } from '@mui/icons-material';
+import { ExpandMore, ExpandLess, Delete, Close as CloseIcon } from '@mui/icons-material';
 import Sidebar from '../components/Sidebar';
 
 interface Workout {
@@ -80,10 +85,6 @@ export default function PushPage() {
     const hasUnsavedChanges = () => {
       if (!selectedDate || !workouts[selectedDate]) return false;
 
-      const workout = workouts[selectedDate];
-      const exercises = workout.selectedExercises;
-
-      // Only check for modified weights that haven't been saved
       return modifiedWeights.size > 0;
     };
 
@@ -566,7 +567,6 @@ const handleFinishWorkout = async () => {
         position: 'absolute',
         right: 8,
         top: 8,
-        color: 'black',
       }}
     >
       <CloseIcon />
@@ -574,29 +574,12 @@ const handleFinishWorkout = async () => {
   </DialogTitle>
   <DialogContent>
     <DialogContentText>
-      You have unsaved changes. Do you want to save your workout before leaving this page?
+      Do you want to save your changes before leaving?
     </DialogContentText>
   </DialogContent>
   <DialogActions>
-    <Button onClick={confirmNavigation} color="primary">
-      Save and Close
-    </Button>
-    <Button 
-      onClick={() => {
-        setConfirmDialogOpen(false);
-        if (pendingNavigation) {
-          if (typeof pendingNavigation === 'string') {
-            window.location.href = pendingNavigation;
-          } else if (pendingNavigation.type === 'date') {
-            setSelectedDate(pendingNavigation.value);
-          }
-          setPendingNavigation(null);
-        }
-      }} 
-      color="error"
-    >
-      Skip and Close
-    </Button>
+    <Button onClick={confirmNavigation}>Save and Continue</Button>
+    <Button onClick={cancelNavigation} color="error">Cancel</Button>
   </DialogActions>
 </Dialog>
 
