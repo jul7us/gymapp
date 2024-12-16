@@ -23,15 +23,15 @@ import {
   IconButton,
 } from '@mui/material';
 import { Delete, Close as CloseIcon } from '@mui/icons-material';
-import type { MuscleGroup } from '../types/workout';
+import type { MuscleGroup, WorkoutCategory } from '../types/workout';
 import Sidebar from '../components/Sidebar';
 
 export default function ConfigPage() {
   const [darkMode, setDarkMode] = useState(false);
   const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([]);
   const [newMuscleGroup, setNewMuscleGroup] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<'push' | 'pull' | 'legs'>('push');
-  const [newExercises, setNewExercises] = useState<{ [key: string]: string[] }>({});
+  const [selectedCategory, setSelectedCategory] = useState<WorkoutCategory>('push');
+  const [newExercises, setNewExercises] = useState<Record<string, string[]>>({});
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
@@ -74,15 +74,12 @@ export default function ConfigPage() {
 
   const saveConfig = async () => {
     try {
-      // Add new exercises to their respective muscle groups
+      // Simplified muscle groups update
       const updatedMuscleGroups = muscleGroups.map(group => ({
         ...group,
         exercises: [
           ...group.exercises,
-          ...(newExercises[group.name]?.filter(ex => ex) || []).map(exerciseName => ({
-            name: exerciseName,
-            category: group.category
-          }))
+          ...(newExercises[group.name]?.filter(ex => ex) || [])
         ]
       }));
 
@@ -94,7 +91,7 @@ export default function ConfigPage() {
 
       setNewExercises({});
       setUnsavedChanges(false);
-      loadConfig(); // Reload the config to get the updated data
+      loadConfig();
     } catch (error) {
       console.error('Error saving config:', error);
     }
@@ -139,7 +136,7 @@ export default function ConfigPage() {
   };
 
   const handleAddExercise = (muscleGroupName: string) => {
-    const currentExercise = newExercises[muscleGroupName]?.[newExercises[muscleGroupName].length - 1];
+    const currentExercise = newExercises[muscleGroupName]?.[0];
     if (!currentExercise) return;
 
     setMuscleGroups(prev => 
@@ -147,7 +144,7 @@ export default function ConfigPage() {
         group.name === muscleGroupName
           ? {
               ...group,
-              exercises: [...group.exercises, { name: currentExercise, category: group.category }]
+              exercises: [...group.exercises, currentExercise]
             }
           : group
       )
@@ -166,7 +163,7 @@ export default function ConfigPage() {
         group.name === muscleGroupName
           ? {
               ...group,
-              exercises: group.exercises.filter(ex => ex.name !== exerciseName)
+              exercises: group.exercises.filter(ex => ex !== exerciseName)
             }
           : group
       )
@@ -208,7 +205,7 @@ export default function ConfigPage() {
             />
             <Select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value as 'push' | 'pull' | 'legs')}
+              onChange={(e) => setSelectedCategory(e.target.value as WorkoutCategory)}
             >
               <MenuItem value="push">Push</MenuItem>
               <MenuItem value="pull">Pull</MenuItem>
@@ -254,12 +251,12 @@ export default function ConfigPage() {
                   </TableRow>
                   {/* Exercise Rows */}
                   {group.exercises.map((exercise) => (
-                    <TableRow key={`${group.name}-${exercise.name}`}>
-                      <TableCell sx={{ pl: 4 }}>{exercise.name}</TableCell>
+                    <TableRow key={`${group.name}-${exercise}`}>
+                      <TableCell sx={{ pl: 4 }}>{exercise}</TableCell>
                       <TableCell></TableCell>
                       <TableCell></TableCell>
                       <TableCell>
-                        <IconButton onClick={() => handleDeleteExercise(group.name, exercise.name)}>
+                        <IconButton onClick={() => handleDeleteExercise(group.name, exercise)}>
                           <Delete />
                         </IconButton>
                       </TableCell>
