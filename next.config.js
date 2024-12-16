@@ -2,9 +2,6 @@
 const nextConfig = {
   async rewrites() {
     return [];
-  },
-  server: {
-    port: 3001
   }
 }
 

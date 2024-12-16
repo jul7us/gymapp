@@ -1,13 +1,12 @@
 'use client';
-import { Drawer, List, ListItem, ListItemText, Box, Switch, Typography } from '@mui/material';
+import { Drawer, List, ListItem, ListItemText, Box } from '@mui/material';
 
 interface SidebarProps {
   darkMode: boolean;
-  setDarkMode: (value: boolean) => void;
   handleNavigation: (path: string) => void;
 }
 
-export default function Sidebar({ darkMode, setDarkMode, handleNavigation }: SidebarProps) {
+export default function Sidebar({ darkMode, handleNavigation }: SidebarProps) {
   return (
     <Box
       component="nav"

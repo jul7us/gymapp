@@ -1,7 +1,5 @@
 'use client';
-import { ListItemIcon } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { Home, FitnessCenter, TableChart } from '@mui/icons-material';
 import {
   Button,
   TextField,
@@ -12,18 +10,14 @@ import {
   IconButton,
   Collapse,
   Dialog,
-  DialogActions,
+  DialogTitle,
   DialogContent,
   DialogContentText,
-  DialogTitle,
-  List,
-  ListItem,
-  ListItemText,
-  Switch,
+  DialogActions,
   Snackbar,
   Alert,
 } from '@mui/material';
-import { ExpandMore, ExpandLess, Delete, Menu, Close as CloseIcon } from '@mui/icons-material';
+import { ExpandMore, ExpandLess, Delete, Close as CloseIcon } from '@mui/icons-material';
 import Sidebar from '../components/Sidebar';
 
 interface Workout {
@@ -40,31 +34,6 @@ interface Workouts {
   [date: string]: Workout;
 }
 
-interface MuscleGroup {
-  category: string;
-  name: string;
-  exercises: { name: string }[];
-}
-
-interface WorkoutEntry {
-  date: string;
-  type: string;
-  exercise: string;
-  weight: string;
-}
-
-interface ExpandedGroups {
-  [key: string]: boolean;
-}
-
-interface DropdownSelections {
-  [key: string]: string;
-}
-
-interface Weights {
-  [key: string]: string;
-}
-
 export default function LegsPage() {
   const [muscleGroups, setMuscleGroups] = useState({});
 
@@ -74,14 +43,11 @@ export default function LegsPage() {
   const [pendingNavigation, setPendingNavigation] = useState<string | { type: string; value: string } | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [date, setDate] = useState('');
-  const [dropdownSelections, setDropdownSelections] = useState<DropdownSelections>({});
-  const [expandedGroups, setExpandedGroups] = useState<ExpandedGroups>({});
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [finishDialogOpen, setFinishDialogOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dropdownSelections, setDropdownSelections] = useState({});
+  const [expandedGroups, setExpandedGroups] = useState({});
   const [darkMode, setDarkMode] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [weights, setWeights] = useState<Weights>({});
+  const [weights, setWeights] = useState({});
   const [modifiedWeights, setModifiedWeights] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -90,7 +56,7 @@ export default function LegsPage() {
         const res = await fetch('/api/config');
         const data = await res.json();
         
-        // Filter and transform the config for legs exercises
+        // Change filter to legs exercises
         const legsGroups = data.muscleGroups
           .filter((group: MuscleGroup) => group.category === 'legs')
           .reduce((acc: { [key: string]: string[] }, group: MuscleGroup) => {
@@ -119,10 +85,6 @@ export default function LegsPage() {
     const hasUnsavedChanges = () => {
       if (!selectedDate || !workouts[selectedDate]) return false;
 
-      const workout = workouts[selectedDate];
-      const exercises = workout.selectedExercises;
-
-      // Only check for modified weights that haven't been saved
       return modifiedWeights.size > 0;
     };
 
@@ -148,22 +110,18 @@ export default function LegsPage() {
       const res = await fetch('/api/get-dates?type=legs');
       const data = await res.json();
       
-      // Log the response for debugging
       console.log('API Response:', data);
 
-      // Handle error response
       if (data.error) {
         console.error('API Error:', data.error);
         return;
       }
 
-      // Ensure data is an array
       if (!Array.isArray(data)) {
         console.error('Expected array of dates but got:', data);
         return;
       }
 
-      // Format dates if needed (in case they're not in the expected format)
       const formattedDates = data.map(date => 
         typeof date === 'string' ? date : date.date
       );
@@ -186,22 +144,29 @@ export default function LegsPage() {
   const fetchWorkoutData = async (date: string) => {
     try {
       const res = await fetch(`/api/get-workouts?date=${date}`);
-      const workoutData: WorkoutEntry[] = await res.json();
-  
+      if (!res.ok) {
+        throw new Error('Failed to fetch workout data');
+      }
+      
+      const data = await res.json();
+      console.log('Fetched workout data:', data);
+
+      // Ensure data is an array
+      const workoutData = Array.isArray(data) ? data : [];
+
       // Filter and organize workouts for the selected date
-      const exercises: { [key: string]: string[] } = {};
-      const weights: { [key: string]: string } = {};
-      workoutData.forEach((entry: WorkoutEntry) => {
+      const { selectedExercises, weights } = workoutData.reduce((acc, entry) => {
         if (entry.date === date) {
-          exercises[entry.type] = exercises[entry.type] || [];
-          exercises[entry.type].push(entry.exercise);
-          weights[entry.exercise] = entry.weight;
+          acc.selectedExercises[entry.type] = acc.selectedExercises[entry.type] || [];
+          acc.selectedExercises[entry.type].push(entry.exercise);
+          acc.weights[entry.exercise] = entry.weight;
         }
-      });
-  
+        return acc;
+      }, { selectedExercises: {}, weights: {} });
+
       setWorkouts((prev) => ({
         ...prev,
-        [date]: { selectedExercises: exercises, weights },
+        [date]: { selectedExercises, weights },
       }));
       setWeights(weights);
     } catch (error) {
@@ -209,7 +174,7 @@ export default function LegsPage() {
     }
   };
 
-  const handleNavigation = (path: string) => {
+  const handleNavigation = (path) => {
     if (unsavedChanges) {
       setPendingNavigation(path);
       setConfirmDialogOpen(true);
@@ -248,12 +213,12 @@ export default function LegsPage() {
     setDate('');
   };
 
-  const toggleGroupExpansion = (muscleGroup: string) => {
+  const toggleGroupExpansion = (muscleGroup) => {
     setExpandedGroups((prev) => ({ ...prev, [muscleGroup]: !prev[muscleGroup] }));
   };
 
-  const handleAddExercise = (muscleGroup: string) => {
-    const exercise = dropdownSelections[muscleGroup as keyof typeof dropdownSelections];
+  const handleAddExercise = (muscleGroup) => {
+    const exercise = dropdownSelections[muscleGroup];
     if (!exercise || (workouts[selectedDate]?.selectedExercises[muscleGroup] || []).length >= 5) return;
 
     setWorkouts((prev) => {
@@ -281,53 +246,60 @@ export default function LegsPage() {
 
   // Save the workout to the database, overwriting existing values for the same exercise and date
 const handleFinishWorkout = async () => {
-    if (!workouts[selectedDate]) return;
-  
-    const exercises = workouts[selectedDate].selectedExercises;
-    const weights = workouts[selectedDate].weights;
-  
-    try {
-      for (const [muscleGroup, groupExercises] of Object.entries(exercises)) {
-        for (const exercise of groupExercises) {
-          if (weights[exercise]) {
-            // Overwrite logic: Delete the old entry first
-            await fetch(`/api/delete-workout?date=${selectedDate}&exercise=${encodeURIComponent(exercise)}`, {
-              method: 'DELETE',
-            });
-  
-            // Insert the new entry
-            const saveData = {
-              type: muscleGroup,
-              exercise,
-              weight: weights[exercise],
-              date: selectedDate
-            };
-            await fetch('/api/save-workout', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(saveData),
-            });
+  if (!workouts[selectedDate]) return;
+
+  const exercises = workouts[selectedDate].selectedExercises;
+  const weights = workouts[selectedDate].weights;
+
+  try {
+    console.log('Starting workout save with:', { exercises, weights, selectedDate });
+    
+    for (const [muscleGroup, groupExercises] of Object.entries(exercises)) {
+      for (const exercise of groupExercises) {
+        if (weights[exercise]) {
+          const saveData = {
+            type: muscleGroup,
+            exercise,
+            weight: weights[exercise],
+            date: selectedDate
+          };
+          console.log('Saving exercise:', saveData);
+
+          // Save the workout
+          const res = await fetch('/api/save-workout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(saveData),
+          });
+
+          const result = await res.json();
+          console.log('Save response:', result);
+
+          if (!res.ok) {
+            throw new Error(result.error || 'Failed to save workout');
           }
         }
       }
-      
-      // Clear modified weights after successful save
-      setModifiedWeights(new Set());
-      setUnsavedChanges(false);
-      setSuccessMessage('Workout saved successfully!');
-    } catch (error) {
-      console.error('Error saving workout:', error);
     }
-  };
+    
+    setModifiedWeights(new Set());
+    setUnsavedChanges(false);
+    setSuccessMessage('Workout saved successfully!');
+
+    // Refresh the dates list
+    fetchAllDates();
+  } catch (error) {
+    console.error('Error saving workout:', error);
+    alert(`Error saving workout: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
 
   const handleDeleteWorkout = async () => {
     if (!selectedDate) return;
   
     try {
-      // Delete only legs entries for the selected date
-      const res = await fetch(`/api/delete-workout?date=${selectedDate}&workoutType=legs`, { 
-        method: 'DELETE' 
-      });
+      // Delete all entries for the selected date
+      const res = await fetch(`/api/delete-workout?date=${selectedDate}`, { method: 'DELETE' });
   
       if (!res.ok) {
         const errorData = await res.json();
@@ -417,49 +389,50 @@ const handleFinishWorkout = async () => {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        height: '100vh',
-        backgroundColor: darkMode ? '#121212' : '#f5f5f5',
-        color: darkMode ? '#ffffff' : '#000000',
-      }}
-    >
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: { xs: 'column', sm: 'row' }, // Stack on mobile, side-by-side on desktop
+      minHeight: '100vh',
+    }}>
       <Sidebar
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         handleNavigation={handleNavigation}
       />
-      
-      {/* Main Content */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: 2,
-          margin: '0 20px',
+          p: { xs: 1, sm: 2, md: 3 }, // Smaller padding on mobile
+          margin: { xs: '0', sm: '0 20px' },
+          width: { xs: '100%', sm: 'auto' }, // Full width on mobile
         }}
       >
         <Snackbar
-          open={!!successMessage}
-          autoHideDuration={3000}
-          onClose={() => setSuccessMessage('')}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        >
-          <Alert 
-            severity="success" 
-            onClose={() => setSuccessMessage('')}
-            sx={{ width: '100%' }}
-          >
-            {successMessage}
-          </Alert>
-        </Snackbar>
-
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+  open={!!successMessage}
+  autoHideDuration={3000}
+  onClose={() => setSuccessMessage('')}
+  anchorOrigin={{ vertical: 'top', horizontal: 'center' }} // Position at the top center
+>
+  <Alert severity="success" onClose={() => setSuccessMessage('')} sx={{ width: '100%' }}>
+    {successMessage}
+  </Alert>
+</Snackbar>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' }, // Stack on mobile
+          gap: { xs: 1, sm: 2 },
+          alignItems: 'center', 
+          mb: 2 
+        }}>
           <Button
             variant="contained"
             onClick={handleAddWorkout}
-            sx={{ backgroundColor: '#1976d2', color: '#fff' }}
+            sx={{ 
+              backgroundColor: '#1976d2',
+              color: '#fff',
+              width: { xs: '100%', sm: 'auto' } // Full width on mobile
+            }}
           >
             Add Workout
           </Button>
@@ -467,36 +440,42 @@ const handleFinishWorkout = async () => {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            sx={{ width: '200px', ml: 2 }}
+            sx={{ 
+              width: { xs: '100%', sm: '200px' },
+              mt: { xs: 1, sm: 0 }
+            }}
           />
           <Select
-            value={selectedDate || ''}
-            onChange={(e) => handleDateChange(e.target.value)}
-            sx={{ ml: 'auto', width: 200 }}
-            displayEmpty
-          >
-            <MenuItem value="" disabled>
-              Select Date
-            </MenuItem>
-            {Object.keys(workouts).length > 0 ? (
-              Object.keys(workouts)
-                .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
-                .map((date) => (
-                  <MenuItem key={date} value={date}>
-                    {date}
-                  </MenuItem>
-                ))
-            ) : (
-              <MenuItem value="" disabled>
-                No workouts found
-              </MenuItem>
-            )}
-          </Select>
+    value={selectedDate || ''}
+    onChange={(e) => handleDateChange(e.target.value)}
+    sx={{ 
+      width: { xs: '100%', sm: 200 },
+      mt: { xs: 1, sm: 0 }
+    }}
+    displayEmpty
+  >
+    <MenuItem value="" disabled>
+      Select Date
+    </MenuItem>
+    {Object.keys(workouts).length > 0 ? (
+      Object.keys(workouts)
+        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+        .map((date) => (
+          <MenuItem key={date} value={date}>
+            {date}
+          </MenuItem>
+        ))
+    ) : (
+      <MenuItem value="" disabled>
+        No workouts found
+      </MenuItem>
+    )}
+  </Select>
         </Box>
 
         {selectedDate &&
           Object.entries(muscleGroups).map(([muscleGroup, groupExercises]) => (
-            <Box key={muscleGroup} sx={{ mb: 3 }}>
+            <Box key={muscleGroup} sx={{ mb: 2 }}>
               <Box
                 onClick={() => toggleGroupExpansion(muscleGroup)}
                 sx={{
@@ -504,7 +483,7 @@ const handleFinishWorkout = async () => {
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   backgroundColor: darkMode ? '#333' : '#ddd',
-                  p: 2,
+                  p: { xs: 1, sm: 2 },
                   borderRadius: '4px',
                   cursor: 'pointer',
                 }}
@@ -513,7 +492,10 @@ const handleFinishWorkout = async () => {
                 {expandedGroups[muscleGroup] ? <ExpandLess /> : <ExpandMore />}
               </Box>
               <Collapse in={expandedGroups[muscleGroup]}>
-                <Box sx={{ mt: 2 }}>
+                <Box sx={{ 
+                  mt: 1,
+                  px: { xs: 1, sm: 2 }
+                }}>
                   {(workouts[selectedDate]?.selectedExercises[muscleGroup] || []).map((exercise) => (
                     <Box
                       key={exercise}
@@ -557,10 +539,9 @@ const handleFinishWorkout = async () => {
                       <MenuItem value="" disabled>
                         Select Exercise
                       </MenuItem>
-                      {(groupExercises as string[])
-                        .filter((exercise: string) => 
-                          !(workouts[selectedDate]?.selectedExercises[muscleGroup] || []).includes(exercise))
-                        .map((exercise: string) => (
+                      {groupExercises
+                        .filter((exercise) => !(workouts[selectedDate]?.selectedExercises[muscleGroup] || []).includes(exercise))
+                        .map((exercise) => (
                           <MenuItem key={exercise} value={exercise}>
                             {exercise}
                           </MenuItem>

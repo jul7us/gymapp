@@ -155,20 +155,18 @@ export default function PushPage() {
       const workoutData = Array.isArray(data) ? data : [];
 
       // Filter and organize workouts for the selected date
-      const exercises: { [key: string]: string[] } = {};
-      const weights: { [key: string]: string } = {};
-
-      workoutData.forEach((entry: WorkoutEntry) => {
+      const { selectedExercises, weights } = workoutData.reduce((acc, entry) => {
         if (entry.date === date) {
-          exercises[entry.type] = exercises[entry.type] || [];
-          exercises[entry.type].push(entry.exercise);
-          weights[entry.exercise] = entry.weight;
+          acc.selectedExercises[entry.type] = acc.selectedExercises[entry.type] || [];
+          acc.selectedExercises[entry.type].push(entry.exercise);
+          acc.weights[entry.exercise] = entry.weight;
         }
-      });
+        return acc;
+      }, { selectedExercises: {}, weights: {} });
 
       setWorkouts((prev) => ({
         ...prev,
-        [date]: { selectedExercises: exercises, weights },
+        [date]: { selectedExercises, weights },
       }));
       setWeights(weights);
     } catch (error) {

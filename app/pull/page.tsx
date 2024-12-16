@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import { ExpandMore, ExpandLess, Delete, Close as CloseIcon } from '@mui/icons-material';
 import Sidebar from '../components/Sidebar';
+import { MuscleGroup, ExpandedGroups, DropdownSelections, Weights } from '../types/workout';
 
 interface Workout {
   selectedExercises: {
@@ -34,32 +35,20 @@ interface Workouts {
   [date: string]: Workout;
 }
 
-interface MuscleGroup {
-  category: string;
-  name: string;
-  exercises: { name: string }[];
-}
-
-interface WorkoutEntry {
-  date: string;
-  type: string;
-  exercise: string;
-  weight: string;
-}
-
 export default function PullPage() {
   const [muscleGroups, setMuscleGroups] = useState({});
+
   const [workouts, setWorkouts] = useState<Workouts>({});
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | { type: string; value: string } | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [date, setDate] = useState('');
-  const [dropdownSelections, setDropdownSelections] = useState({});
-  const [expandedGroups, setExpandedGroups] = useState({});
+  const [dropdownSelections, setDropdownSelections] = useState<DropdownSelections>({});
+  const [expandedGroups, setExpandedGroups] = useState<ExpandedGroups>({});
   const [darkMode, setDarkMode] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [weights, setWeights] = useState({});
+  const [weights, setWeights] = useState<Weights>({});
   const [modifiedWeights, setModifiedWeights] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -97,10 +86,6 @@ export default function PullPage() {
     const hasUnsavedChanges = () => {
       if (!selectedDate || !workouts[selectedDate]) return false;
 
-      const workout = workouts[selectedDate];
-      const exercises = workout.selectedExercises;
-
-      // Only check for modified weights that haven't been saved
       return modifiedWeights.size > 0;
     };
 
@@ -160,22 +145,29 @@ export default function PullPage() {
   const fetchWorkoutData = async (date: string) => {
     try {
       const res = await fetch(`/api/get-workouts?date=${date}`);
-      const workoutData: WorkoutEntry[] = await res.json();
-  
+      if (!res.ok) {
+        throw new Error('Failed to fetch workout data');
+      }
+      
+      const data = await res.json();
+      console.log('Fetched workout data:', data);
+
+      // Ensure data is an array
+      const workoutData = Array.isArray(data) ? data : [];
+
       // Filter and organize workouts for the selected date
-      const exercises: { [key: string]: string[] } = {};
-      const weights: { [key: string]: string } = {};
-      workoutData.forEach((entry: WorkoutEntry) => {
+      const { selectedExercises, weights } = workoutData.reduce((acc, entry) => {
         if (entry.date === date) {
-          exercises[entry.type] = exercises[entry.type] || [];
-          exercises[entry.type].push(entry.exercise);
-          weights[entry.exercise] = entry.weight;
+          acc.selectedExercises[entry.type] = acc.selectedExercises[entry.type] || [];
+          acc.selectedExercises[entry.type].push(entry.exercise);
+          acc.weights[entry.exercise] = entry.weight;
         }
-      });
-  
+        return acc;
+      }, { selectedExercises: {}, weights: {} });
+
       setWorkouts((prev) => ({
         ...prev,
-        [date]: { selectedExercises: exercises, weights },
+        [date]: { selectedExercises, weights },
       }));
       setWeights(weights);
     } catch (error) {
@@ -227,7 +219,7 @@ export default function PullPage() {
   };
 
   const handleAddExercise = (muscleGroup: string) => {
-    const exercise = dropdownSelections[muscleGroup as keyof typeof dropdownSelections];
+    const exercise = dropdownSelections[muscleGroup];
     if (!exercise || (workouts[selectedDate]?.selectedExercises[muscleGroup] || []).length >= 5) return;
 
     setWorkouts((prev) => {
@@ -305,27 +297,25 @@ const handleFinishWorkout = async () => {
 
   const handleDeleteWorkout = async () => {
     if (!selectedDate) return;
-
+  
     try {
-      // Delete only pull entries for the selected date
-      const res = await fetch(`/api/delete-workout?date=${selectedDate}&workoutType=pull`, { 
-        method: 'DELETE' 
-      });
-
+      // Delete all entries for the selected date
+      const res = await fetch(`/api/delete-workout?date=${selectedDate}`, { method: 'DELETE' });
+  
       if (!res.ok) {
         const errorData = await res.json();
         console.error('Error deleting workout:', errorData.message);
         alert('Failed to delete workout.');
         return;
       }
-
+  
       // Remove workout locally
       setWorkouts((prev) => {
         const updatedWorkouts = { ...prev };
         delete updatedWorkouts[selectedDate];
         return updatedWorkouts;
       });
-
+  
       setSelectedDate('');
       setSuccessMessage('Workout deleted successfully!');
     } catch (error) {
@@ -400,26 +390,23 @@ const handleFinishWorkout = async () => {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        height: '100vh',
-        backgroundColor: darkMode ? '#121212' : '#f5f5f5',
-        color: darkMode ? '#ffffff' : '#000000',
-      }}
-    >
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: { xs: 'column', sm: 'row' }, // Stack on mobile, side-by-side on desktop
+      minHeight: '100vh',
+    }}>
       <Sidebar
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         handleNavigation={handleNavigation}
       />
-      
-      {/* Main Content */}
       <Box
+        component="main"
         sx={{
           flexGrow: 1,
-          p: 2,
-          margin: '0 20px',
+          p: { xs: 1, sm: 2, md: 3 }, // Smaller padding on mobile
+          margin: { xs: '0', sm: '0 20px' },
+          width: { xs: '100%', sm: 'auto' }, // Full width on mobile
         }}
       >
         <Snackbar
@@ -432,11 +419,21 @@ const handleFinishWorkout = async () => {
     {successMessage}
   </Alert>
 </Snackbar>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' }, // Stack on mobile
+          gap: { xs: 1, sm: 2 },
+          alignItems: 'center', 
+          mb: 2 
+        }}>
           <Button
             variant="contained"
             onClick={handleAddWorkout}
-            sx={{ backgroundColor: '#1976d2', color: '#fff' }}
+            sx={{ 
+              backgroundColor: '#1976d2',
+              color: '#fff',
+              width: { xs: '100%', sm: 'auto' } // Full width on mobile
+            }}
           >
             Add Workout
           </Button>
@@ -444,35 +441,42 @@ const handleFinishWorkout = async () => {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            sx={{ width: '200px', ml: 2 }}
+            sx={{ 
+              width: { xs: '100%', sm: '200px' },
+              mt: { xs: 1, sm: 0 }
+            }}
           />
           <Select
-  value={selectedDate || ''}
-  onChange={(e) => handleDateChange(e.target.value)}
-  sx={{ ml: 'auto', width: 200 }}
->
-  <MenuItem value="" disabled>
-    Select Date
-  </MenuItem>
-  {Object.keys(workouts).length > 0 ? (
-    Object.keys(workouts)
-      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
-      .map((date) => (
-        <MenuItem key={date} value={date}>
-          {date}
-        </MenuItem>
-      ))
-  ) : (
+    value={selectedDate || ''}
+    onChange={(e) => handleDateChange(e.target.value)}
+    sx={{ 
+      width: { xs: '100%', sm: 200 },
+      mt: { xs: 1, sm: 0 }
+    }}
+    displayEmpty
+  >
     <MenuItem value="" disabled>
-      No workouts found
+      Select Date
     </MenuItem>
-  )}
-</Select>
+    {Object.keys(workouts).length > 0 ? (
+      Object.keys(workouts)
+        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+        .map((date) => (
+          <MenuItem key={date} value={date}>
+            {date}
+          </MenuItem>
+        ))
+    ) : (
+      <MenuItem value="" disabled>
+        No workouts found
+      </MenuItem>
+    )}
+  </Select>
         </Box>
 
         {selectedDate &&
           Object.entries(muscleGroups).map(([muscleGroup, groupExercises]) => (
-            <Box key={muscleGroup} sx={{ mb: 3 }}>
+            <Box key={muscleGroup} sx={{ mb: 2 }}>
               <Box
                 onClick={() => toggleGroupExpansion(muscleGroup)}
                 sx={{
@@ -480,7 +484,7 @@ const handleFinishWorkout = async () => {
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   backgroundColor: darkMode ? '#333' : '#ddd',
-                  p: 2,
+                  p: { xs: 1, sm: 2 },
                   borderRadius: '4px',
                   cursor: 'pointer',
                 }}
@@ -489,7 +493,10 @@ const handleFinishWorkout = async () => {
                 {expandedGroups[muscleGroup] ? <ExpandLess /> : <ExpandMore />}
               </Box>
               <Collapse in={expandedGroups[muscleGroup]}>
-                <Box sx={{ mt: 2 }}>
+                <Box sx={{ 
+                  mt: 1,
+                  px: { xs: 1, sm: 2 }
+                }}>
                   {(workouts[selectedDate]?.selectedExercises[muscleGroup] || []).map((exercise) => (
                     <Box
                       key={exercise}
@@ -533,10 +540,9 @@ const handleFinishWorkout = async () => {
                       <MenuItem value="" disabled>
                         Select Exercise
                       </MenuItem>
-                      {(groupExercises as string[])
-                        .filter((exercise: string) => 
-                          !(workouts[selectedDate]?.selectedExercises[muscleGroup] || []).includes(exercise))
-                        .map((exercise: string) => (
+                      {groupExercises
+                        .filter((exercise) => !(workouts[selectedDate]?.selectedExercises[muscleGroup] || []).includes(exercise))
+                        .map((exercise) => (
                           <MenuItem key={exercise} value={exercise}>
                             {exercise}
                           </MenuItem>
@@ -560,7 +566,6 @@ const handleFinishWorkout = async () => {
         position: 'absolute',
         right: 8,
         top: 8,
-        color: 'black',
       }}
     >
       <CloseIcon />
