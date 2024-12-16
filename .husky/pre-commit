@@ -1,0 +1,8 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Run database tests
+npm run test-setup
+
+# Run linting
+npm run lint 

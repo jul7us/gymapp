@@ -1,12 +1,13 @@
 'use client';
-import { Drawer, List, ListItem, ListItemText, Box } from '@mui/material';
+import { Drawer, List, ListItem, ListItemText, Box, Switch, FormControlLabel } from '@mui/material';
 
 interface SidebarProps {
   darkMode: boolean;
+  setDarkMode: (darkMode: boolean) => void;
   handleNavigation: (path: string) => void;
 }
 
-export default function Sidebar({ darkMode, handleNavigation }: SidebarProps) {
+export default function Sidebar({ darkMode, setDarkMode, handleNavigation }: SidebarProps) {
   return (
     <Box
       component="nav"
@@ -32,6 +33,18 @@ export default function Sidebar({ darkMode, handleNavigation }: SidebarProps) {
         }}
       >
         <List>
+          <ListItem>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={darkMode}
+                  onChange={(e) => setDarkMode(e.target.checked)}
+                />
+              }
+              label="Dark Mode"
+            />
+          </ListItem>
+
           {/* Home Link */}
           <ListItem
             component="button"

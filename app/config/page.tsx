@@ -1,4 +1,5 @@
 'use client';
+import React from 'react';
 import { useState, useEffect } from 'react';
 import {
   Box,
@@ -173,12 +174,6 @@ export default function ConfigPage() {
     setUnsavedChanges(true);
   };
 
-  const deleteButtonStyle = {
-    color: 'error.main',
-    width: '40px',
-    justifyContent: 'center'
-  };
-
   return (
     <Box
       sx={{
@@ -238,9 +233,9 @@ export default function ConfigPage() {
             </TableHead>
             <TableBody>
               {muscleGroups.map((group) => (
-                <>
+                <React.Fragment key={group.name}>
                   {/* Muscle Group Row */}
-                  <TableRow key={group.name}>
+                  <TableRow>
                     <TableCell>{group.name}</TableCell>
                     <TableCell>{group.category}</TableCell>
                     <TableCell>
@@ -251,39 +246,26 @@ export default function ConfigPage() {
                         onKeyPress={(e) => handleExerciseKeyPress(group.name, e)}
                       />
                     </TableCell>
-                    <TableCell sx={{ width: '60px', textAlign: 'center' }}>
-                      <IconButton 
-                        onClick={() => handleDeleteMuscleGroup(group.name)}
-                        sx={deleteButtonStyle}
-                      >
+                    <TableCell>
+                      <IconButton onClick={() => handleDeleteMuscleGroup(group.name)}>
                         <Delete />
                       </IconButton>
                     </TableCell>
                   </TableRow>
                   {/* Exercise Rows */}
                   {group.exercises.map((exercise) => (
-                    <TableRow 
-                      key={`${group.name}-${exercise.name}`}
-                      sx={{ backgroundColor: darkMode 
-                          ? 'rgba(255, 255, 255, 0.05)'
-                          : 'rgba(0, 0, 0, 0.02)'
-                      }}
-                    >
+                    <TableRow key={`${group.name}-${exercise.name}`}>
                       <TableCell sx={{ pl: 4 }}>{exercise.name}</TableCell>
                       <TableCell></TableCell>
                       <TableCell></TableCell>
-                      <TableCell sx={{ width: '60px', textAlign: 'center' }}>
-                        <IconButton 
-                          onClick={() => handleDeleteExercise(group.name, exercise.name)}
-                          size="small"
-                          sx={deleteButtonStyle}
-                        >
-                          <Delete fontSize="small" />
+                      <TableCell>
+                        <IconButton onClick={() => handleDeleteExercise(group.name, exercise.name)}>
+                          <Delete />
                         </IconButton>
                       </TableCell>
                     </TableRow>
                   ))}
-                </>
+                </React.Fragment>
               ))}
             </TableBody>
           </Table>

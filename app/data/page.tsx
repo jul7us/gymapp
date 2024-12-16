@@ -38,30 +38,15 @@ export default function DataPage() {
         setLoading(true);
         setError(null);
         
-        console.log('Fetching workouts data...');
         const res = await fetch('/api/get-workouts');
-        console.log('Response status:', res.status);
-        
         if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          console.error('Error response:', errorData);
-          throw new Error(errorData.details || 'Failed to fetch workouts');
+          throw new Error('Failed to fetch workouts');
         }
         
-        const workoutData = await res.json();
-        console.log('Fetched workout data:', workoutData);
-        
-        if (Array.isArray(workoutData)) {
-          setData(workoutData);
-        } else if (workoutData.error) {
-          throw new Error(`API Error: ${workoutData.error}\nDetails: ${workoutData.details || 'No details provided'}`);
-        } else {
-          throw new Error('Invalid data format received');
-        }
+        const workouts = await res.json();
+        setData(workouts);
       } catch (error) {
-        console.error('Error fetching data:', error);
-        setError(error instanceof Error ? error.message : 'An error occurred');
-        setData([]);
+        setError(error instanceof Error ? error.message : 'Failed to fetch data');
       } finally {
         setLoading(false);
       }
@@ -87,8 +72,7 @@ export default function DataPage() {
       // Refresh data after deletion
       const updatedData = data.filter(row => !(row.date === date && row.exercise === exercise));
       setData(updatedData);
-    } catch (error) {
-      console.error('Error deleting entry:', error);
+    } catch {
       alert('Failed to delete entry');
     }
   };
