@@ -1,7 +1,8 @@
 import { openDb } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { WorkoutCategory } from '@/app/types/workout';
 
-const CATEGORY_MUSCLES = {
+const CATEGORY_MUSCLES: Record<WorkoutCategory, string[]> = {
   push: ['Chest', 'Shoulders', 'Triceps'],
   pull: ['Back', 'Biceps', 'Forearms'],
   legs: ['Quadriceps', 'Hamstrings', 'Calves', 'Glutes']
@@ -10,9 +11,9 @@ const CATEGORY_MUSCLES = {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type');
+    const type = searchParams.get('type') as WorkoutCategory | null;
 
-    if (!type || !CATEGORY_MUSCLES[type]) {
+    if (!type || !(type in CATEGORY_MUSCLES)) {
       return NextResponse.json({ error: 'Invalid workout type' }, { status: 400 });
     }
 
@@ -29,8 +30,7 @@ export async function GET(request: Request) {
     } finally {
       await db.close();
     }
-  } catch (error) {
-    console.error('Error getting dates:', error);
+  } catch {
     return NextResponse.json({ error: 'Failed to get dates' }, { status: 500 });
   }
 }
