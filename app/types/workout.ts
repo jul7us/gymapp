@@ -31,4 +31,13 @@ export interface DropdownSelections {
 
 export interface Weights {
   [key: string]: string;
+}
+
+export type MuscleGroupName = 'Chest' | 'Shoulders' | 'Triceps' | 'Back' | 'Biceps' | 'Forearms' | 'Quadriceps' | 'Hamstrings' | 'Calves' | 'Glutes';
+export type WorkoutCategory = 'push' | 'pull' | 'legs';
+
+export interface WorkoutData {
+  type: MuscleGroupName;
+  date: string;
+  // Add other properties that exist in your workout data
 } 

@@ -1,8 +1,9 @@
 import { openDb } from '../db';
 import { NextResponse } from 'next/server';
+import { WorkoutData, MuscleGroupName, WorkoutCategory } from '@/app/types/workout';
 
-// Define the muscle group mappings
-const muscleGroupCategories = {
+// Define the muscle group mappings with proper typing
+const muscleGroupCategories: Record<MuscleGroupName, WorkoutCategory> = {
   'Chest': 'push',
   'Shoulders': 'push',
   'Triceps': 'push',
@@ -13,30 +14,33 @@ const muscleGroupCategories = {
   'Hamstrings': 'legs',
   'Calves': 'legs',
   'Glutes': 'legs'
-};
+} as const;
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
 
+    if (!date) {
+      return NextResponse.json({ error: 'Date is required' }, { status: 400 });
+    }
+
     const db = await openDb();
     
     try {
-      let query = 'SELECT * FROM workouts';
-      const params = [];
-
-      if (date) {
-        query += ' WHERE date = ?';
-        params.push(date);
-      }
-
-      query += ' ORDER BY date DESC, type, exercise';
-
-      const workouts = await db.all(query, params);
+      // Create parameterized query with valid types
+      const validTypes = Object.keys(muscleGroupCategories);
+      const placeholders = validTypes.map(() => '?').join(',');
+      
+      const workouts = await db.all<WorkoutData[]>(`
+        SELECT * FROM workouts 
+        WHERE date = ? 
+        AND type IN (${placeholders})
+        ORDER BY type;
+      `, [date, ...validTypes]);
 
       // Add workout_type based on muscle group
-      const workoutsWithType = workouts.map(workout => ({
+      const workoutsWithType = workouts.map((workout: { type: MuscleGroupName }) => ({
         ...workout,
         workout_type: muscleGroupCategories[workout.type] || 'unknown'
       }));
