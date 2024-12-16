@@ -3,13 +3,37 @@ import { open } from 'sqlite';
 import path from 'path';
 import type { MuscleGroup } from '@/app/types/workout';
 
-const dbPath = path.join(process.cwd(), 'database.sqlite');
+// Use /tmp for Vercel serverless functions
+const dbPath = process.env.NODE_ENV === 'production'
+  ? '/tmp/database.sqlite'
+  : path.join(process.cwd(), 'database.sqlite');
 
 export async function openDb() {
-  return open({
+  // Create tables if they don't exist
+  const db = await open({
     filename: dbPath,
     driver: sqlite3.Database
   });
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS workouts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL,
+      type TEXT NOT NULL,
+      exercise TEXT NOT NULL,
+      weight TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS muscle_groups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      category TEXT NOT NULL,
+      exercises TEXT NOT NULL,
+      UNIQUE(name)
+    );
+  `);
+
+  return db;
 }
 
 export async function getWorkouts(date?: string) {

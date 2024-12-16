@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { openDb } from '@/lib/db';
+import { deleteWorkout } from '@/lib/db';
 
 export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,20 +13,13 @@ export async function DELETE(request: Request) {
     );
   }
 
-  const db = await openDb();
   try {
-    await db.run(
-      'DELETE FROM workouts WHERE date = ? AND exercise = ?',
-      [date, exercise]
-    );
+    await deleteWorkout(date, exercise);
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting workout:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to delete workout' },
       { status: 500 }
     );
-  } finally {
-    await db.close();
   }
 }
